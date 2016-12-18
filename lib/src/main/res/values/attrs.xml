@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MonthView">
+        <attr name="selectedCircleColor" format="color" />
+        <attr name="dayTextColor" format="color" />
+        <attr name="unavailableDayTextColor" format="color" />
+        <attr name="selectedDayTextColor" format="color" />
+        <attr name="monthTextColor" format="color" />
+        <attr name="dayTextSize" format="dimension" />
+        <attr name="monthTextSize" format="dimension" />
+    </declare-styleable>
+    <declare-styleable name="AirCalendarView">
+        <attr name="visibleYearCount" format="integer" />
+        <attr name="daySelectOffset" format="integer" />
+        <attr name="isSelectFuture" format="boolean" />
+    </declare-styleable>
+</resources>
