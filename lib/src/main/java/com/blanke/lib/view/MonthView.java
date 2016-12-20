@@ -68,7 +68,7 @@ public class MonthView extends View {
         monthTextColor = typedArray.getColor(R.styleable.MonthView_monthTextColor, Color.BLACK);
         unavailableDayTextColor = typedArray.getColor(R.styleable.MonthView_unavailableDayTextColor, Color.GRAY);
         dayTextSize = typedArray.getDimension(R.styleable.MonthView_dayTextSize, 40);
-        monthTextSize = typedArray.getDimension(R.styleable.MonthView_monthTextSize, 50);
+        monthTextSize = typedArray.getDimension(R.styleable.MonthView_monthTextSize, 40);
         typedArray.recycle();
         selectedCirclePaint = new Paint();
         selectedCirclePaint.setAntiAlias(true);
@@ -97,13 +97,13 @@ public class MonthView extends View {
             itemWidth = itemHeight = width / 7F;
             monthHeight = itemHeight;
         }
-        int height = (int) (width - itemHeight);
+        int height = (int) (width - itemHeight + offsetRowHeight * 3);
         if (mCalendarMonthModel != null) {
             int itemCount = mCalendarMonthModel.getNumberDaysInMonth()
                     + mCalendarMonthModel.getDayOffset();
             float temp = itemCount / 7F;
             if (temp > 5) {
-                height += itemHeight + offsetRowHeight;
+                height += itemHeight;
             }
         } else {
             height = 0;
@@ -125,7 +125,8 @@ public class MonthView extends View {
         String monthText = mCalendarMonthModel.getMonthText();
         Rect textBounds = new Rect();
         monthPaint.getTextBounds(monthText, 0, monthText.length(), textBounds);
-        canvas.drawText(monthText, itemWidth + 30, monthHeight / 2, monthPaint);
+        canvas.drawText(monthText, itemWidth + textBounds.exactCenterX() / 2,
+                monthHeight/2 - textBounds.exactCenterY() / 2, monthPaint);
     }
 
     private void drawMonthDay(Canvas canvas) {
