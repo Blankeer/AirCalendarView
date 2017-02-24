@@ -85,6 +85,7 @@ public class MonthView extends View {
         monthPaint = new Paint(dayPaint);
         monthPaint.setColor(monthTextColor);
         monthPaint.setTextSize(monthTextSize);
+        monthPaint.setTextAlign(Paint.Align.LEFT);
         todayCirclePaint = new Paint(dayPaint);
         todayCircleRadius = 4;//今日小圆点
     }
@@ -94,20 +95,22 @@ public class MonthView extends View {
 //        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
         if (itemHeight == 0) {
-            itemWidth = itemHeight = width / 7F;
-            monthHeight = itemHeight;
+            itemWidth = itemHeight = (width - getPaddingLeft() - getPaddingRight()) / 7F;
+            monthHeight = itemHeight * 3 / 4;
         }
-        int height = (int) (width - itemHeight + offsetRowHeight * 3);
+//        int height = (int) (width - itemHeight + offsetRowHeight * 3);
+        int height = (int) (monthHeight + 5 * itemHeight + offsetRowHeight * 4);
         if (mCalendarMonthModel != null) {
             int itemCount = mCalendarMonthModel.getNumberDaysInMonth()
                     + mCalendarMonthModel.getDayOffset();
             float temp = itemCount / 7F;
             if (temp > 5) {
-                height += itemHeight;
+                height += itemHeight + offsetRowHeight;
             }
         } else {
             height = 0;
         }
+        height += getPaddingTop() + getPaddingBottom();
         setMeasuredDimension(width, height);
     }
 
@@ -124,9 +127,11 @@ public class MonthView extends View {
         }
         String monthText = mCalendarMonthModel.getMonthText();
         Rect textBounds = new Rect();
-        monthPaint.getTextBounds(monthText, 0, monthText.length(), textBounds);
-        canvas.drawText(monthText, itemWidth + textBounds.exactCenterX() / 2,
-                monthHeight/2 - textBounds.exactCenterY() / 2, monthPaint);
+        monthPaint.getTextBounds("22", 0, 2, textBounds);//22 test width
+        Paint.FontMetrics font = monthPaint.getFontMetrics();
+        float baseLine = (float) (0.5 * monthHeight - 0.5 * (font.ascent + font.descent));
+        canvas.drawText(monthText, itemWidth / 2 - textBounds.exactCenterX(),
+                getPaddingTop() + baseLine, monthPaint);
     }
 
     private void drawMonthDay(Canvas canvas) {
@@ -134,7 +139,7 @@ public class MonthView extends View {
             return;
         }
         List<CalendarDayModel> days = mCalendarMonthModel.getDays();
-        float h = monthHeight + offsetRowHeight;
+        float h = monthHeight + itemWidth / 2 + getPaddingTop();
         int dayOffset = mCalendarMonthModel.getDayOffset();
         for (int i = 0; i < days.size(); i++) {
             CalendarDayModel day = days.get(i);
@@ -145,20 +150,32 @@ public class MonthView extends View {
             Rect textBounds = new Rect();
             Paint dPaint = dayPaint;
             //绘制是否选中
-            float left = w - itemWidth / 2;
+            float left = w - itemWidth / 2 + getPaddingLeft();
             float top = h - itemHeight / 2;
             float bottom = h + itemHeight / 2;
-            float right = w + itemWidth / 2;
+            float right = w + itemWidth / 2 + getPaddingLeft();
             if (day.isUnavailable) {//不可选中
                 dPaint = unavailableDayPaint;
             } else if (day.isSelected()) {
                 dPaint = selectedDayPaint;
                 if (mCalendarMonthModel.hasSelectedStartAndEnd()) {
+                    boolean isDrawLeft = false, isDrawRight = false;
+                    if (dayOffset == 0 && !day.isSelectedStartDay) {
+                        isDrawLeft = true;
+                    } else if (dayOffset == 6 && !day.isSelectedEndDay) {
+                        isDrawRight = true;
+                    }
                     if (i == 0 && !day.isSelectedStartDay) {//每个月第一天
-                        canvas.drawRect(0, top, right - itemWidth, bottom, selectedCirclePaint);
+                        isDrawLeft = true;
                     } else if (i == days.size() - 1 && !day.isSelectedEndDay) {//最后一天
+                        isDrawRight = true;
+                    }
+                    if (isDrawLeft) {
+                        canvas.drawRect(0, top, right - itemWidth, bottom, selectedCirclePaint);
+                    }
+                    if (isDrawRight) {
                         canvas.drawRect(left + itemWidth, top,
-                                7 * itemWidth, bottom, selectedCirclePaint);
+                                getMeasuredWidth(), bottom, selectedCirclePaint);
                     }
                 }
                 if (day.isBetweenStartAndEndSelected) {
@@ -179,7 +196,7 @@ public class MonthView extends View {
             }
             //绘制文本day
             dPaint.getTextBounds(dayText, 0, dayText.length(), textBounds);
-            canvas.drawText(dayText, w, h - textBounds.exactCenterY(), dPaint);
+            canvas.drawText(dayText, w + getPaddingLeft(), h - textBounds.exactCenterY(), dPaint);
             //绘制是否是今日
             if (day.isToday) {
                 if (day.isSelected()) {
@@ -187,7 +204,7 @@ public class MonthView extends View {
                 } else {
                     todayCirclePaint.setColor(this.dayPaint.getColor());
                 }
-                canvas.drawCircle(w, h + itemWidth / 4 + this.todayCircleRadius * 2,
+                canvas.drawCircle(w + getPaddingLeft(), h + itemWidth / 4 + this.todayCircleRadius * 2,
                         ((float) this.todayCircleRadius), this.todayCirclePaint);
             }
             dayOffset++;
@@ -203,8 +220,12 @@ public class MonthView extends View {
         if (MotionEventCompat.getActionMasked(event) == MotionEvent.ACTION_UP) {
             float x = event.getX();
             float y = event.getY();
-            int position = (int) ((y - monthHeight - offsetRowHeight / 2 + itemHeight / 2)
-                    / (itemHeight + offsetRowHeight)) * 7;
+            float mod = (y - monthHeight) % (itemHeight + offsetRowHeight);
+            if (mod > itemHeight) {
+                return false;
+            }
+            int position = (int) ((y - monthHeight) / (itemHeight + offsetRowHeight));
+            position *= 7;
             position += (int) (x / itemWidth) + 1;
             position -= mCalendarMonthModel.getDayOffset();
             CalendarDayModel day = mCalendarMonthModel.getDayModel(position);

@@ -67,17 +67,27 @@ public class DateRange {
                 startDateAfter.add(Calendar.DAY_OF_MONTH, daySelectOffset);
                 Calendar endDateAfter = (Calendar) endDate.clone();
                 endDateAfter.add(Calendar.DAY_OF_MONTH, daySelectOffset);
-                Calendar dayDateAfter = (Calendar) day.clone();
-                dayDateAfter.add(Calendar.DAY_OF_MONTH, daySelectOffset);
-                if (!dayDateAfter.before(startDate)
-                        && !day.after(startDateAfter)) {//start+1>=x>=start-1
+                Calendar startDateBefore = (Calendar) startDate.clone();
+                startDateBefore.add(Calendar.DAY_OF_MONTH, -daySelectOffset);
+                Calendar endDateBefore = (Calendar) endDate.clone();
+                endDateBefore.add(Calendar.DAY_OF_MONTH, -daySelectOffset);
+                if (day.compareTo(endDate) < 0
+                        && day.compareTo(startDateBefore) >= 0
+                        && day.compareTo(startDateAfter) <= 0) {//start+1>=x>=start-1
                     startDate = day;
-                } else if (!dayDateAfter.before(endDate)
-                        && !day.after(endDateAfter)) {//end+1>=x>=end-1
+                } else if (day.compareTo(startDate) > 0
+                        && day.compareTo(endDateBefore) >= 0
+                        && day.compareTo(endDateAfter) <= 0) {//end+1>=x>=end-1
                     endDate = day;
                 } else {//不在start/end附近的offset内
                     startDate = day;
                     endDate = null;
+                }
+                if (startDate != null && endDate != null
+                        && startDate.compareTo(endDate) > 0) {//fix start>end,swap
+                    Calendar temp = startDate;
+                    startDate = endDate;
+                    endDate = temp;
                 }
             }
         }

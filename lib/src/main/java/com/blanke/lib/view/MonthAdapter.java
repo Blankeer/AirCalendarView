@@ -35,10 +35,17 @@ public class MonthAdapter extends RecyclerView.Adapter<MonthAdapter.MonthHolder>
         this.mRecyclerView = recyclerView;
         this.dateRange = dateRange;
         monthModelMap = new HashMap<>();
-        recyclerView.post(new Runnable() {
+        clearSelect();
+    }
+
+    public void clearSelect() {
+        mRecyclerView.post(new Runnable() {
             @Override
             public void run() {
-                dateRange.clickDay(null, getAllCalendarModel());//init
+                dateRange.setEndDate(null);
+                dateRange.setStartDate(null);
+                dateRange.clickDay(null, getAllCalendarModel());
+                invalidateAllView();
             }
         });
     }
@@ -118,6 +125,10 @@ public class MonthAdapter extends RecyclerView.Adapter<MonthAdapter.MonthHolder>
 
     public void setOnSelectedDayListener(AirCalendarView.OnSelectedDayListener onSelectedDayListener) {
         this.onSelectedDayListener = onSelectedDayListener;
+    }
+
+    public DateRange getDateRange() {
+        return dateRange;
     }
 
     static class MonthHolder extends RecyclerView.ViewHolder {

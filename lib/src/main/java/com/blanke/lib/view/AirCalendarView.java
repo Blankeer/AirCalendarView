@@ -5,7 +5,10 @@ import android.content.res.TypedArray;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import com.blanke.lib.R;
 import com.blanke.lib.view.bean.DateRange;
@@ -31,6 +34,7 @@ public class AirCalendarView extends FrameLayout {
     private int toDayYear;
     private int toDayMonth;
     private int toDayPosition;//今天这个月的position
+    private TextView startDateTv, endDateTv;
 
     public AirCalendarView(Context context) {
         super(context);
@@ -52,9 +56,13 @@ public class AirCalendarView extends FrameLayout {
         int visibleYearCount = typedArray.getInt(R.styleable.AirCalendarView_visibleYearCount, 1);
         int daySelectOffset = typedArray.getInt(R.styleable.AirCalendarView_daySelectOffset, 1);
         boolean isSelectFuture = typedArray.getBoolean(R.styleable.AirCalendarView_isSelectFuture, true);
+        typedArray.recycle();
         dataRange = new DateRange(isSelectFuture, daySelectOffset);
-        mRecyclerView = new RecyclerView(getContext());
-        addView(mRecyclerView);
+        View rootView = LayoutInflater.from(getContext()).inflate(R.layout.view_aircalendarview, this, false);
+        addView(rootView);
+        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.view_aircalendar_rv_date);
+        startDateTv = (TextView) rootView.findViewById(R.id.view_aircalendar_tv_start_date);
+        endDateTv = (TextView) rootView.findViewById(R.id.view_aircalendar_tv_end_date);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         toDay = CalendarUtils.getToDay();
         toDayYear = toDay.get(Calendar.YEAR);
@@ -80,9 +88,25 @@ public class AirCalendarView extends FrameLayout {
         List<Calendar> months = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
             Calendar calendar = CalendarUtils.getCalendar(year, i, 1);
+            if (year == toDayYear && i > toDayMonth) {
+                break;
+            }
             months.add(calendar);
         }
         return months;
+    }
+
+
+    public Calendar getStartDate() {
+        return mMonthAdapter.getDateRange().getStartDate();
+    }
+
+    public Calendar getEndDate() {
+        return mMonthAdapter.getDateRange().getEndDate();
+    }
+
+    public void clearSelect() {
+        mMonthAdapter.clearSelect();
     }
 
     public RecyclerView getRecyclerView() {
@@ -101,7 +125,21 @@ public class AirCalendarView extends FrameLayout {
         return mMonthAdapter.getOnSelectedDayListener();
     }
 
-    public void setOnSelectedDayListener(OnSelectedDayListener onSelectedDayListener) {
-        this.mMonthAdapter.setOnSelectedDayListener(onSelectedDayListener);
+    private String getDateStr(Calendar calendar) {
+        if (calendar == null) {
+            return "";
+        }
+        return calendar.get(Calendar.YEAR) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.DAY_OF_MONTH);
+    }
+
+    public void setOnSelectedDayListener(final OnSelectedDayListener onSelectedDayListener) {
+        this.mMonthAdapter.setOnSelectedDayListener(new OnSelectedDayListener() {
+            @Override
+            public void onDaySelected(Calendar startDay, Calendar endDay) {
+                startDateTv.setText(getDateStr(startDay));
+                endDateTv.setText(getDateStr(endDay));
+                onSelectedDayListener.onDaySelected(startDay, endDay);
+            }
+        });
     }
 }
